@@ -1,0 +1,55 @@
+<html>
+<head>
+    <title>AmiLabs Locales Editor</title>
+    <meta name="description" content="">
+    <meta name="author" content="AmiLabs">
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">    
+    <link rel="stylesheet" href="css/bootstrap/bootstrap.min.css">
+    <link rel="stylesheet" href="css/fontawesome/fontawesome.min.css">
+    <link rel="stylesheet" href="css/styles.css">
+    <script src="js/jquery/jquery.min.js"></script>
+    <script src="js/bootstrap/bootstrap.min.js"></script>
+    <script src="js/edit.js"></script>
+    <script src="locales.js"></script>
+</head>
+<body>
+    <div style="width:97%; margin-left: auto; margin-right: auto;">
+        <div class="row some-tools">
+            <div class="col-xs-10 text-right"></div>
+            <div class="col-xs-2 text-right">
+                <a href="#" onclick="oLE.expand(); return false;">Expand All</a> 
+                &nbsp;&nbsp;&nbsp;
+                <a href="#" onclick="oLE.collapse(); return false;">Collapse All</a>
+            </div>
+        </div>        
+        <div id="edit-area"></div>
+    </div>
+    <div class="text-center">
+        <a href="#" onclick="oLE.download(); return false;">Download JS file</a>
+    </div>
+    <footer>
+        <div class="container">
+            <div class="var-stats">
+                
+            </div>
+            <div class="col-xs-2 text-right">
+                Locale to Edit
+            </div>
+            <div class="col-xs-6 text-center">
+                <select class="form-control input-sm" id="select-lang">
+                    <option value="en">English</option>
+                    <option value="th" selected>Thai</option>
+                </select>
+            </div>
+            <div class="col-xs-4 text-center">
+                English Version
+            </div>
+            <button class="btn btn-primary btn-sm btn-save" onclick="oLE.save(); return false;" title="Shortcut: Ctrl + S">Save</button>
+        </div>
+    </footer>    
+    <div id="loader"></div>
+    <div id="loader-content"><i class="fa fa-5x fa-spin fa-spinner"></i></div>
+</body>
+</html>

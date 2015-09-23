@@ -73,12 +73,21 @@ input, textarea {
     background-color: #ccc;
 }
 
+.section-container {
+    background-color: white;
+}
+
 .section-form {
     display: none;
 }
 
 .section-form.opened {
     display: block;
+}
+
+.error {
+background-color: #ffaaaa;
+color: black !important;
 }
 
 .section-form textarea {

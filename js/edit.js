@@ -2,13 +2,18 @@ var NewLocales = {};
 var hasChanges = false;
 
 window.onbeforeunload = function(e) {
-  return hasChanges ? 'You have ' + oLE.getChangesCount() + ' unsaved changes!\nAre you sure you want to discard them?' : null;
+    return hasChanges ? 'You have ' + oLE.getChangesCount() + ' unsaved changes!\nAre you sure you want to discard them?' : null;
 };
 
 var LocalesEditor = function(){
     var container;
     var langs = ['en', 'th'];
     var lang = 'en';
+    var langColors = {
+        en: '#ffaa99',
+        th: '#99ffaa'
+    }
+    
     var openedSections = {};
     var changedLocales = {};
     
@@ -30,6 +35,7 @@ var LocalesEditor = function(){
             lang = localStorage.getItem('lang');
             $('#select-lang').val(lang);
         }
+        this.setLang(lang);
         
         if(localStorage.getItem('openedSections')){
             openedSections = JSON.parse(localStorage.getItem('openedSections'));
@@ -61,6 +67,7 @@ var LocalesEditor = function(){
     this.setLang = function(language){
         lang = language;
         localStorage.setItem('lang', lang);
+        $('#select-lang, body').css('background-color', langColors[lang]);
     }
 
     this.drawTree = function(){
@@ -100,6 +107,10 @@ var LocalesEditor = function(){
     }
     
     this.save = function(){
+        if($('.error').length){
+            alert('Please fix all errors first!');
+            return;
+        }
         if(hasChanges){
             showLoader();
             $.post('save.php', {locale: 'Locales = ' + JSON.stringify(NewLocales, null, 4)}, function(){
@@ -117,6 +128,39 @@ var LocalesEditor = function(){
 
     this.collapse = function(){
         $('.section-form').removeClass('opened');
+    }
+
+    var checkSpecialTags = function(oldStr, newStr){
+        // Checks for <.*>, %.*%, _.*_
+        if(lang !== 'en'){
+            var regexp = new RegExp('%.*?%|_.*?_|<.*?>', 'ig');
+            var oldMatches = oldStr.match(regexp);
+            var newMatches = newStr.match(regexp);
+            if(oldMatches || newMatches){
+                var changed = false;
+                if((!oldMatches && newMatches) || (oldMatches && !newMatches)){
+                    changed = true;
+                }else{
+                    for(var i = 0; i< oldMatches.length; i++){
+                        if(newMatches.indexOf(oldMatches[i]) < 0){
+                            changed = true;
+                            break;
+                        }
+                    }
+                    for(var i = 0; i< newMatches.length; i++){
+                        if(oldMatches.indexOf(newMatches[i]) < 0){
+                            changed = true;
+                            break;
+                        }
+                    }
+                }
+                if(changed){
+                    alert('Special constructions were changed!\nDO NOT CHANGE ANYTHING INSIDE <...>, %...% or _..._ !!!');
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     var showLoader = function(){
@@ -213,18 +257,25 @@ var LocalesEditor = function(){
                 return function(){
                     if('undefined' === typeof(changedLocales[lang])){
                         changedLocales[lang] = {};
-                    }                    
+                    }
+                    $(this).removeClass('error');
                     if($(this).val() != $(this).attr('data-original')){
+                        var enOrig = getLocale($(this).attr('data-section'), $(this).attr('data-locale'), 'en');
+                        if(!checkSpecialTags(enOrig, $(this).val())){
+                            $(this).addClass('error');
+                            return;
+                        }
+
                         if($(this).val().indexOf('%') >= 0){
                             var re = /%(.*?)%/g;
                             var matches = $(this).val().match(re);
                             if(matches && matches.length){
                                 for(var i=0; i<matches.length; i++){
                                     var match = matches[i];
-                                    var tst = /^[a-zA-Z0-9%]+$/g;
+                                    var tst = /^[a-zA-Z0-9%_.]+$/g;
                                     if(!tst.test(match)){
                                         alert('Invalid symbols in %var% constructon detected!\nOnly a-z and digits allowed!');
-                                        $(this).val($(this).attr('data-original'));
+                                        $(this).addClass('error');
                                         return;
                                     }
                                 }

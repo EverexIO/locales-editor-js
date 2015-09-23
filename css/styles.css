@@ -122,6 +122,24 @@ color: black !important;
     margin-top: -21px;
 }
 
+.locale-change-date {
+    position: relative;
+    top: -14px;
+    right: 10px;
+    color: #666;
+    z-index: 9;
+    font-size: 9px;
+    text-align: right;
+    height: 0px;
+    overflow: visible;
+}
+
+#changes-after-date {
+    height: 16px;
+    margin-bottom: 2px;
+    width: 110px;
+}
+
 .locale-changed {
     margin: 6px;
     font-size: 9px;

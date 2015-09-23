@@ -13,12 +13,15 @@
     <script src="js/bootstrap/bootstrap.min.js"></script>
     <script src="js/edit.js"></script>
     <script src="locales.js"></script>
+    <script src="locales-changes.js"></script>
 </head>
 <body>
     <div style="width:97%; margin-left: auto; margin-right: auto;">
         <div class="row some-tools">
-            <div class="col-xs-10 text-right"></div>
-            <div class="col-xs-2 text-right">
+            <div class="col-xs-8 text-right"></div>
+            <div class="col-xs-4 text-right">
+                Only changes after: <input type="date" id="changes-after-date" />
+                &nbsp;&nbsp;&nbsp;
                 <a href="#" onclick="oLE.expand(); return false;">Expand All</a> 
                 &nbsp;&nbsp;&nbsp;
                 <a href="#" onclick="oLE.collapse(); return false;">Collapse All</a>

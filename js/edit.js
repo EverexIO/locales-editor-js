@@ -30,7 +30,8 @@ var LocalesEditor = function(){
     }
     
     this.init = function(id){
-        
+        this.compileChanges();
+
         if(localStorage.getItem('lang') && langs.indexOf(localStorage.getItem('lang')) >= 0){
             lang = localStorage.getItem('lang');
             $('#select-lang').val(lang);
@@ -60,10 +61,39 @@ var LocalesEditor = function(){
                 event.preventDefault();
                 return false;
             }
-        }(this));        
+        }(this));
         
+        $('#changes-after-date').change(function(){
+            var date = $('#changes-after-date').val();
+            $('.locale-row').each(function(i, e){
+                var date = $('#changes-after-date').val();
+                if($(e).attr('data-last-change') < date){
+                    $(e).hide();
+                }else{
+                    $(e).show();
+                }
+            });
+        });
     };
     
+    this.compileChanges = function(){
+        for(var section in Locales){
+            if('undefined' === typeof(LocalesChanges[section])){
+                LocalesChanges[section] = {};
+            }
+            for(var langvar in Locales[section]){
+                if('undefined' === typeof(LocalesChanges[section][langvar])){
+                    LocalesChanges[section][langvar] = {};
+                }
+                for(var language in Locales[section][langvar]){
+                    if('undefined' === typeof(LocalesChanges[section][langvar][language])){
+                        LocalesChanges[section][langvar][language] = new Date().getTime();
+                    }
+                }
+            }
+        }
+    }
+
     this.setLang = function(language){
         lang = language;
         localStorage.setItem('lang', lang);
@@ -112,10 +142,20 @@ var LocalesEditor = function(){
             return;
         }
         if(hasChanges){
+            if(lang == 'en'){
+                $('.changed input').each(function(i, e){
+                    var section = $(e).attr('data-section');
+                    var locale = $(e).attr('data-locale');
+                    LocalesChanges[section][locale]['en'] = new Date().getTime();
+                });
+            }
+
             showLoader();
             $.post('save.php', {locale: 'Locales = ' + JSON.stringify(NewLocales, null, 4)}, function(){
-                hasChanges = false;
-                document.location.reload();
+                $.post('save.php', {changes: 'LocalesChanges = ' + JSON.stringify(LocalesChanges, null, 4)}, function(){
+                    hasChanges = false;
+                    document.location.reload();
+                });                
             });
         }else{
             alert('Nothing to save');
@@ -326,17 +366,29 @@ var LocalesEditor = function(){
                 original.text(locale);
 
                 localeInput.append(tools);
-                localeInput.append(original);                
+                localeInput.append(original);
             }
 
             var localeEng = $('<PRE>');
             localeEng.addClass('col-xs-4 locale-en');
             localeEng.text(localeEn);
 
+            var changed = $('<DIV>');
+            changed.addClass('locale-change-date');
+            var date = new Date(LocalesChanges[sectionName][langVar]['en']);
+            var day = '0' + date.getDate().toString();
+            var month = '0' + (date.getMonth() + 1).toString();
+            day = day.substring(day.length - 2);
+            month = month.substring(month.length - 2);
+            var fullDate = date.getFullYear() + '-' + month + '-' + day;
+            changed.text(fullDate);
+            localeRow.attr('data-last-change', fullDate);
 
             localeRow.append(localeHeader);
             localeRow.append(localeInput);
             localeRow.append(localeEng);
+            
+            localeRow.append(changed);
             
             sectionForm.append(localeRow);
         }

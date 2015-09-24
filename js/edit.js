@@ -51,6 +51,7 @@ var LocalesEditor = function(){
             return function(){
                 ed.setLang($('#select-lang').val());
                 ed.drawTree();
+                ed.updateFiler();
             }
         }(this));
         
@@ -63,21 +64,23 @@ var LocalesEditor = function(){
             }
         }(this));
         
-        $('#changes-after-date').change(function(){
-            var date = $('#changes-after-date').val();
-            var shown = 0;
-            $('.locale-row').each(function(i, e){
-                var date = $('#changes-after-date').val();
-                if($(e).attr('data-last-change') < date){
-                    $(e).hide();
-                }else{
-                    $(e).show();
-                    shown++;
-                }
-            });
-            $('#date-filtered-count').text('(' + shown + ')');
-        });
+        $('#changes-after-date').change(this.updateFiler);
     };
+    
+    this.updateFiler = function(){
+        var date = $('#changes-after-date').val();
+        var shown = 0;
+        $('.locale-row').each(function(i, e){
+            var date = $('#changes-after-date').val();
+            if($(e).attr('data-last-change') < date){
+                $(e).hide();
+            }else{
+                $(e).show();
+                shown++;
+            }
+        });
+        $('#date-filtered-count').text('(' + shown + ')');
+    }
     
     this.compileChanges = function(){
         for(var section in Locales){

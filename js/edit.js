@@ -65,14 +65,17 @@ var LocalesEditor = function(){
         
         $('#changes-after-date').change(function(){
             var date = $('#changes-after-date').val();
+            var shown = 0;
             $('.locale-row').each(function(i, e){
                 var date = $('#changes-after-date').val();
                 if($(e).attr('data-last-change') < date){
                     $(e).hide();
                 }else{
                     $(e).show();
+                    shown++;
                 }
             });
+            $('#date-filtered-count').text('(' + shown + ')');
         });
     };
     

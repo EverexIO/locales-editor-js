@@ -5,6 +5,7 @@
 
 body {
     padding-top: 60px;
+    padding-bottom: 50px;
 }
 
 footer {
@@ -86,8 +87,8 @@ input, textarea {
 }
 
 .error {
-background-color: #ffaaaa;
-color: black !important;
+    background-color: #ffaaaa;
+    color: black !important;
 }
 
 .section-form textarea {
@@ -132,6 +133,19 @@ color: black !important;
     text-align: right;
     height: 0px;
     overflow: visible;
+}
+
+.locale-change-date-lang {
+    position: relative;
+    top: -5px;
+    left: 0px;
+    color: #666;
+    z-index: 9;
+    font-size: 9px;
+    text-align: right;
+    height: 0px;
+    overflow: visible;
+    font-weight: normal;
 }
 
 #changes-after-date {

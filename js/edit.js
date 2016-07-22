@@ -5,8 +5,23 @@ window.onbeforeunload = function(e) {
     return hasChanges ? 'You have ' + oLE.getChangesCount() + ' unsaved changes!\nAre you sure you want to discard them?' : null;
 };
 
+var daysLock = 7; // If eng was changed more than 7 days ego - disable change other locales
+
+var TIMER = {
+    timeLoaded: 0,
+    timeLeft: 30
+}
+
 var LocalesEditor = function(){
     var container;
+    TIMER.timeLoaded = new Date().getTime(); // time loaded
+    TIMER.timeLeft = 30; // minutes left
+    var mtime = 0;
+    $.get('check.php', function(data){
+        console.log('Load locales modify time: ' + data);
+        mtime = data;
+    });
+
     var langs = ['en', 'th'];
     var lang = 'en';
     var langColors = {
@@ -65,6 +80,32 @@ var LocalesEditor = function(){
         }(this));
         
         $('#changes-after-date').change(this.updateFiler);
+
+        setInterval(function(){
+            if(!TIMER.timeLeft){
+                return;
+            }
+            var secLeft = (30 * 60) - Math.round(((new Date).getTime() - TIMER.timeLoaded) / 1000);
+            var timeLeft = Math.ceil(secLeft / 60);
+            var minutes = Math.floor(secLeft / 60);
+            var seconds = secLeft - minutes * 60;
+            if(seconds < 10){
+                seconds = '0' + seconds;
+            }
+            if(timeLeft <= 0){
+                timeLeft = 0;
+                minutes = '0';
+                seconds = '00';
+            }
+            TIMER.timeLeft = timeLeft;
+            $('#timer').html(minutes + ':' + seconds);
+            var fsize = 14;
+            if(timeLeft < 15){
+                fsize = 29 - timeLeft;
+                $('#timer').css('color', 'rgb(' + (255 - (timeLeft * 8)) + ', 0, 0)');
+            }
+            $('#timer').css('font-size', fsize + 'px');
+        }, 500);
     };
     
     this.updateFiler = function(){
@@ -143,25 +184,54 @@ var LocalesEditor = function(){
     }
     
     this.save = function(){
+        if(!TIMER.timeLeft){
+            if(confirm('Version is outdated. Refresh the page?')){
+                document.location.reload();
+            }
+            return;
+        }
         if($('.error').length){
             alert('Please fix all errors first!');
             return;
         }
         if(hasChanges){
             if(lang == 'en'){
-                $('.changed input').each(function(i, e){
+                $('.changed input, .changed textarea').each(function(i, e){
                     var section = $(e).attr('data-section');
                     var locale = $(e).attr('data-locale');
                     LocalesChanges[section][locale]['en'] = new Date().getTime();
                 });
             }
 
+            if(lang == 'th'){
+                $('.changed input, .changed textarea').each(function(i, e){
+                    var section = $(e).attr('data-section');
+                    var locale = $(e).attr('data-locale');
+                    LocalesChanges[section][locale]['th'] = new Date().getTime();
+                });
+            }
+
             showLoader();
-            $.post('save.php', {locale: 'Locales = ' + JSON.stringify(NewLocales, null, 4)}, function(){
-                $.post('save.php', {changes: 'LocalesChanges = ' + JSON.stringify(LocalesChanges, null, 4)}, function(){
-                    hasChanges = false;
-                    document.location.reload();
-                });                
+            $.get('check.php', function(data){
+                console.log('Check locales modify time: ' + data);
+                if(mtime != data){
+                    console.log(data + ' != ' + mtime);
+                    hideLoader();
+                    alert('Locales were changed by another user! Can\'t save!');
+                    return;
+                }
+                $.post('save.php', {ver: '1', locale: 'Locales = ' + JSON.stringify(NewLocales, null, 4)}, function(data){
+                    if(data == 'OK'){
+                        $.post('save.php', {changes: 'LocalesChanges = ' + JSON.stringify(LocalesChanges, null, 4)}, function(data){
+                            hideLoader();
+                            hasChanges = false;
+                            document.location.reload();
+                        });
+                    }else{
+                        hideLoader();
+                        alert('ERROR, Cannot save!');
+                    }
+                });
             });
         }else{
             alert('Nothing to save');
@@ -177,6 +247,8 @@ var LocalesEditor = function(){
     }
 
     var checkSpecialTags = function(oldStr, newStr){
+        // Allow clear the field
+        if(newStr == '') return true;
         // Checks for <.*>, %.*%, _.*_
         if(lang !== 'en'){
             var regexp = new RegExp('%.*?%|_.*?_|<.*?>', 'ig');
@@ -212,6 +284,11 @@ var LocalesEditor = function(){
     var showLoader = function(){
         $('#loader').show();
         $('#loader-content').show();
+    }
+
+    var hideLoader = function(){
+        $('#loader').hide();
+        $('#loader-content').hide();
     }
 
     var addSection = function(sectionName){
@@ -289,6 +366,14 @@ var LocalesEditor = function(){
                 input.width('100%');
                 input.attr('rows', rows);
             }
+
+            var now = (new Date).getTime();
+            var daysLockTime = daysLock * 24 * 3600 * 1000;
+            
+            if((lang != 'en') && ((now - LocalesChanges[sectionName][langVar]['en']) > daysLockTime)){
+                input.prop('readonly', true);
+            }
+
             input.attr('data-original', locale);
             if(!locale){
                 input.attr('placeholder', localeEn);
@@ -298,9 +383,26 @@ var LocalesEditor = function(){
 
             input.attr('data-section', sectionName);
             input.attr('data-locale', langVar);
+            if((lang != 'en') && (0 === langVar.indexOf('sys_'))){
+                input.prop('readonly', true);
+            }
 
             input.change(function(_lang){
                 return function(){
+                    var _left = TIMER.timeLeft;
+                    if(!_left){
+                        if(confirm('Version is outdated. Refresh the page?')){
+                            document.location.reload();
+                        }
+                        $(this).addClass('error');
+                        return;                            
+                    }
+
+                    if((_left <= 10) && !window.timeAlerted){
+                        alert('Please save within next 10 minutes, or changes will be lost!');
+                        window.timeAlerted = true;
+                    }
+
                     if('undefined' === typeof(changedLocales[lang])){
                         changedLocales[lang] = {};
                     }
@@ -396,6 +498,22 @@ var LocalesEditor = function(){
             
             localeRow.append(changed);
             
+
+            if(lang != 'en'){
+                var changed = $('<DIV>');
+                changed.addClass('locale-change-date-lang');
+                var date = new Date(LocalesChanges[sectionName][langVar][lang]);
+                if(date.getTime() > 1445695578820){
+                var day = '0' + date.getDate().toString();
+                var month = '0' + (date.getMonth() + 1).toString();
+                day = day.substring(day.length - 2);
+                month = month.substring(month.length - 2);
+                var fullDate = date.getFullYear() + '-' + month + '-' + day;
+                changed.text('Last changed: ' + fullDate);
+                localeHeader.append(changed);
+                }
+            }
+
             sectionForm.append(localeRow);
         }
     }
